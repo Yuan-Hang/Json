@@ -18,6 +18,11 @@ class JsonException final : public runtime_error {
 
 class JsonValue {
  public:
+  JsonValue() {}
+  JsonValue(const JsonValue&) = delete;
+  JsonValue(JsonValue&&) = delete;
+  virtual ~JsonValue() {}
+
   virtual Json::JsonType type() const = 0;
 
   virtual bool asBool() const { throw JsonException("not a boolean"); }
@@ -44,85 +49,73 @@ class JsonValue {
     throw JsonException("not an object");
   }
 
-  virtual size_t size() const { return 0; }
-
-  JsonValue() {}
-  virtual ~JsonValue() {}
+  virtual size_t size() const noexcept { return 0; }
 };
 
-class JsonNull final : public JsonValue {
+template <typename T, Json::JsonType U>
+class Value : public JsonValue {
  public:
-  explicit JsonNull() {}
-  Json::JsonType type() const override { return Json::JsonType::kNull; }
+  Value(const T& val) : val_(val) {}
+  Json::JsonType type() const final { return U; }
+
+ protected:
+  T val_;
 };
 
-class JsonBool final : public JsonValue {
+class JsonNull final : public Value<nullptr_t, Json::JsonType::kNull> {
  public:
-  explicit JsonBool(bool val) : val_(val) {}
-  Json::JsonType type() const override { return Json::JsonType::kBool; }
+  explicit JsonNull(nullptr_t) : Value(nullptr) {}
+};
+
+class JsonBool final : public Value<bool, Json::JsonType::kBool> {
+ public:
+  explicit JsonBool(bool val) : Value(val) {}
   bool asBool() const override { return val_; }
-
- private:
-  bool val_;
 };
 
-class JsonNumber final : public JsonValue {
+class JsonNumber final : public Value<double, Json::JsonType::kNumber> {
  public:
-  explicit JsonNumber(double val) : val_(val) {}
-  Json::JsonType type() const override { return Json::JsonType::kNumber; }
+  explicit JsonNumber(double val) : Value(val) {}
   double asDouble() const override { return val_; }
-
- private:
-  double val_;
 };
 
-class JsonString final : public JsonValue {
+class JsonString final : public Value<string, Json::JsonType::kString> {
  public:
-  explicit JsonString(string val) : val_(val) {}
-  Json::JsonType type() const override { return Json::JsonType::kString; }
+  explicit JsonString(const string& val) : Value(val) {}
   const string& asString() const override { return val_; }
-
- private:
-  string val_;
 };
 
-class JsonArray final : public JsonValue {
+class JsonArray final : public Value<Json::array_t, Json::JsonType::kArray> {
  public:
-  explicit JsonArray(const Json::array_t& val) : val_(val) {}
-  Json::JsonType type() const override { return Json::JsonType::kArray; }
+  explicit JsonArray(const Json::array_t& val) : Value(val) {}
   Json::array_t& asArray() override { return val_; }
   const Json::array_t& asArray() const override { return val_; }
   const Json& operator[](size_t i) const override { return val_[i]; }
   Json& operator[](size_t i) override { return val_[i]; }
-  size_t size() const override { return val_.size(); }
-
- private:
-  Json::array_t val_;
+  size_t size() const noexcept override { return val_.size(); }
 };
 
-class JsonObject final : public JsonValue {
+class JsonObject final : public Value<Json::object_t, Json::JsonType::kObject> {
  public:
-  explicit JsonObject(const Json::object_t& val) : val_(val) {}
-  Json::JsonType type() const override { return Json::JsonType::kObject; }
+  explicit JsonObject(const Json::object_t& val) : Value(val) {}
   Json::object_t& asObect() override { return val_; }
   const Json::object_t& asObect() const override { return val_; }
   const Json& operator[](const string& i) const override { return val_.at(i); }
   Json& operator[](const string& i) override { return val_.at(i); }
-  size_t size() const override { return val_.size(); }
-
- private:
-  Json::object_t val_;
+  size_t size() const noexcept override { return val_.size(); }
 };
 }  // namespace details
 
 namespace details {
-bool is1to9(char ch) { return ch >= '1' && ch <= '9'; }
-bool is0to9(char ch) { return ch >= '0' && ch <= '9'; }
+constexpr bool is1to9(char ch) { return ch >= '1' && ch <= '9'; }
+constexpr bool is0to9(char ch) { return ch >= '0' && ch <= '9'; }
 
 class Parser final {
  public:
-  Parser(const string& content)
-      : start_(content.c_str()), curr_(content.c_str()) {}
+  Parser(const string& content) noexcept : start_(content.c_str()),
+                                           curr_(content.c_str()) {}
+  Parser(const Parser&) = delete;
+  Parser(Parser&&) = delete;
 
   Json parse() {
     parseWhitespace();
@@ -134,7 +127,7 @@ class Parser final {
 
  private:
   Json parseValue() {
-    switch (*start_) {
+    switch (*curr_) {
       case 'n':
         return parseLiteral("null");
       case 't':
@@ -209,6 +202,11 @@ class Parser final {
           return str;
         case '\0':
           error("MISS QUOTATION MARK");
+        default:
+          if (static_cast<unsigned char>(*curr_) < 0x20)
+            error("INVALID STRING CHAR");
+          str.push_back(*curr_);
+          break;
         case '\\':
           switch (*++curr_) {
             case '\"':
@@ -247,16 +245,10 @@ class Parser final {
               }
               str += encodeUTF8(u1);
             } break;
-            case '\0':
-              error("MISS QUOTATION MARK");
             default:
               error("INVALID STRING ESCAPE");
           }
           break;
-        default:
-          if (static_cast<unsigned char>(*curr_) < 0x20)
-            error("INVALID STRING CHAR");
-          str.push_back(*curr_);
       }
     }
   }
@@ -277,7 +269,7 @@ class Parser final {
     return u;
   }
 
-  string encodeUTF8(unsigned u) {
+  string encodeUTF8(unsigned u) noexcept {
     string utf8;
     if (u <= 0x7F)  // 0111,1111
       utf8.push_back(static_cast<char>(u & 0xff));
@@ -336,7 +328,6 @@ class Parser final {
       if (*curr_++ != ':') error("MISS COLON");
       parseWhitespace();
       Json val = parseValue();
-      // obj[key] = val;
       obj.insert({key, val});
       parseWhitespace();
       if (*curr_ == ',')
@@ -349,7 +340,7 @@ class Parser final {
     }
   }
 
-  void parseWhitespace() {
+  void parseWhitespace() noexcept {
     while (*curr_ == ' ' || *curr_ == '\t' || *curr_ == '\r' || *curr_ == '\n')
       ++curr_;
     start_ = curr_;
@@ -365,7 +356,7 @@ class Parser final {
 }  // namespace details
 
 namespace json {
-Json::Json(nullptr_t) : value_(make_unique<JsonNull>()) {}
+Json::Json(nullptr_t) : value_(make_unique<JsonNull>(nullptr)) {}
 Json::Json(bool val) : value_(make_unique<JsonBool>(val)) {}
 Json::Json(int val) : Json(val * 1.0) {}
 Json::Json(double val) : value_(make_unique<JsonNumber>(val)) {}
@@ -376,7 +367,7 @@ Json::Json(const object_t& val) : value_(make_unique<JsonObject>(val)) {}
 Json::Json(const Json& rhs) {
   switch (rhs.type()) {
     case JsonType::kNull:
-      value_ = make_unique<JsonNull>();
+      value_ = make_unique<JsonNull>(nullptr);
       break;
     case JsonType::kBool:
       value_ = make_unique<JsonBool>(rhs.asBool());

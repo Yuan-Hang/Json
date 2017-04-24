@@ -6,51 +6,51 @@ using namespace std;
 
 Json parseOk(const string& strJson) {
   string errMsg;
-  Json _1 = Json::parse(strJson, errMsg);
+  Json json = Json::parse(strJson, errMsg);
   EXPECT_EQ(errMsg, "");
-  return _1;
+  return json;
 }
 
 void testError(const string& expect, const string& strJson) {
   string errMsg;
-  Json _1 = Json::parse(strJson, errMsg);
+  Json json = Json::parse(strJson, errMsg);
   auto pos = errMsg.find_first_of(":");
   auto actual = errMsg.substr(0, pos);
   EXPECT_EQ(actual, expect);
 }
 
 void testRoundtrip(const string& expect) {
-  Json _1 = parseOk(expect);
-  string actual = _1.serialize();
-  if (_1.isNumber())
+  Json json = parseOk(expect);
+  string actual = json.serialize();
+  if (json.isNumber())
     EXPECT_EQ(strtod(actual.c_str(), nullptr), strtod(expect.c_str(), nullptr));
   else
     EXPECT_EQ(actual, expect);
 }
 
 void testNull(const string& strJson) {
-  Json _1 = parseOk(strJson);
-  EXPECT_TRUE(_1.isNull());
+  Json json = parseOk(strJson);
+  EXPECT_TRUE(json.isNull());
 }
 
 void testBool(bool expect, const string& content) {
-  Json _1 = parseOk(content);
-  EXPECT_TRUE(_1.isBool());
-  EXPECT_EQ(_1.asBool(), expect);
-  _1 = Json(!expect);
-  EXPECT_EQ(_1.asBool(), !expect);
+  Json json = parseOk(content);
+  EXPECT_TRUE(json.isBool());
+  EXPECT_EQ(json.asBool(), expect);
+  json = Json(!expect);
+  EXPECT_EQ(json.asBool(), !expect);
 }
 
 void testNumber(double expect, const string& strJson) {
-  Json _1 = parseOk(strJson);
-  EXPECT_TRUE(_1.isNumber());
-  EXPECT_EQ(_1.asDouble(), expect);
+  Json json = parseOk(strJson);
+  EXPECT_TRUE(json.isNumber());
+  EXPECT_EQ(json.asDouble(), expect);
 }
 
 void testString(const string& expect, const string& strJson) {
-  Json _1 = parseOk(strJson);
-  EXPECT_TRUE(_1.isString());
-  EXPECT_EQ(_1.asString(), expect);
+  Json json = parseOk(strJson);
+  EXPECT_TRUE(json.isString());
+  EXPECT_EQ(json.asString(), expect);
 }
 
 TEST(Str2Json, JsonNull) {
@@ -94,10 +94,10 @@ TEST(Str2Json, JsonNumber) {
   testNumber(1.7976931348623157e+308, "1.7976931348623157e+308");
   testNumber(-1.7976931348623157e+308, "-1.7976931348623157e+308");
   string errMsg;
-  Json _1 = Json::parse("1.2e+12", errMsg);
-  EXPECT_TRUE(_1.isNumber());
-  _1 = Json(3.1415);
-  EXPECT_EQ(3.1415, _1.asDouble());
+  Json json = Json::parse("1.2e+12", errMsg);
+  EXPECT_TRUE(json.isNumber());
+  json = Json(3.1415);
+  EXPECT_EQ(3.1415, json.asDouble());
 }
 
 TEST(Str2Json, JsonString) {
@@ -115,54 +115,54 @@ TEST(Str2Json, JsonString) {
   testString("\xF0\x9D\x84\x9E", "\"\\uD834\\uDD1E\"");
   testString("\xF0\x9D\x84\x9E", "\"\\ud834\\udd1e\"");
   string errMsg;
-  Json _1 = Json::parse("\"something\"", errMsg);
-  _1 = Json("another thing");
-  EXPECT_EQ(_1.asString(), "another thing");
+  Json json = Json::parse("\"something\"", errMsg);
+  json = Json("another thing");
+  EXPECT_EQ(json.asString(), "another thing");
 }
 
 TEST(Str2Json, JsonArray) {
-  Json _1 = parseOk("[ ]");
-  EXPECT_TRUE(_1.isArray());
-  EXPECT_EQ(_1.size(), 0);
+  Json json = parseOk("[ ]");
+  EXPECT_TRUE(json.isArray());
+  EXPECT_EQ(json.size(), 0);
 
-  Json _2 = parseOk("[ null , false , true , 123 , \"abc\" ]");
-  EXPECT_TRUE(_2.isArray());
-  EXPECT_EQ(_2.size(), 5);
-  EXPECT_EQ(_2[0], Json(nullptr));
-  EXPECT_EQ(_2[1], Json(false));
-  EXPECT_EQ(_2[2], Json(true));
-  EXPECT_EQ(_2[3], Json(123.0));
-  EXPECT_EQ(_2[4], Json("abc"));
+  json = parseOk("[ null , false , true , 123 , \"abc\" ]");
+  EXPECT_TRUE(json.isArray());
+  EXPECT_EQ(json.size(), 5);
+  EXPECT_EQ(json[0], Json(nullptr));
+  EXPECT_EQ(json[1], Json(false));
+  EXPECT_EQ(json[2], Json(true));
+  EXPECT_EQ(json[3], Json(123.0));
+  EXPECT_EQ(json[4], Json("abc"));
 
-  Json _3 = parseOk("[ [ ] , [ 0 ] , [ 0 , 1 ] , [ 0 , 1 , 2 ] ]");
-  EXPECT_TRUE(_3.isArray());
-  EXPECT_EQ(_3.size(), 4);
+  json = parseOk("[ [ ] , [ 0 ] , [ 0 , 1 ] , [ 0 , 1 , 2 ] ]");
+  EXPECT_TRUE(json.isArray());
+  EXPECT_EQ(json.size(), 4);
 
-  EXPECT_TRUE(_3[0].isArray());
-  EXPECT_EQ(_3[0].size(), 0);
+  EXPECT_TRUE(json[0].isArray());
+  EXPECT_EQ(json[0].size(), 0);
 
-  EXPECT_TRUE(_3[1].isArray());
-  EXPECT_EQ(_3[1].size(), 1);
-  EXPECT_EQ(_3[1][0].asDouble(), 0);
+  EXPECT_TRUE(json[1].isArray());
+  EXPECT_EQ(json[1].size(), 1);
+  EXPECT_EQ(json[1][0].asDouble(), 0);
 
-  EXPECT_TRUE(_3[2].isArray());
-  EXPECT_EQ(_3[2].size(), 2);
-  EXPECT_EQ(_3[2][0].asDouble(), 0);
-  EXPECT_EQ(_3[2][1].asDouble(), 1);
+  EXPECT_TRUE(json[2].isArray());
+  EXPECT_EQ(json[2].size(), 2);
+  EXPECT_EQ(json[2][0].asDouble(), 0);
+  EXPECT_EQ(json[2][1].asDouble(), 1);
 
-  EXPECT_TRUE(_3[3].isArray());
-  EXPECT_EQ(_3[3].size(), 3);
-  EXPECT_EQ(_3[3][0].asDouble(), 0);
-  EXPECT_EQ(_3[3][1].asDouble(), 1);
-  EXPECT_EQ(_3[3][2].asDouble(), 2);
+  EXPECT_TRUE(json[3].isArray());
+  EXPECT_EQ(json[3].size(), 3);
+  EXPECT_EQ(json[3][0].asDouble(), 0);
+  EXPECT_EQ(json[3][1].asDouble(), 1);
+  EXPECT_EQ(json[3][2].asDouble(), 2);
 }
 
 TEST(Str2Json, JsonObject) {
-  Json _1 = parseOk("{ }");
-  EXPECT_TRUE(_1.isObject());
-  EXPECT_EQ(_1.size(), 0);
+  Json json = parseOk("{ }");
+  EXPECT_TRUE(json.isObject());
+  EXPECT_EQ(json.size(), 0);
 
-  Json _2 = parseOk(
+  json = parseOk(
       " { "
       "\"n\" : null , "
       "\"f\" : false , "
@@ -172,28 +172,28 @@ TEST(Str2Json, JsonObject) {
       "\"a\" : [ 1, 2, 3 ],"
       "\"o\" : { \"1\" : 1, \"2\" : 2, \"3\" : 3 }"
       " } ");
-  EXPECT_TRUE(_2.isObject());
-  EXPECT_EQ(_2.size(), 7);
+  EXPECT_TRUE(json.isObject());
+  EXPECT_EQ(json.size(), 7);
 
-  EXPECT_TRUE(_2["n"].isNull());
+  EXPECT_TRUE(json["n"].isNull());
 
-  EXPECT_TRUE(_2["f"].isBool());
-  EXPECT_EQ(_2["f"].asBool(), false);
+  EXPECT_TRUE(json["f"].isBool());
+  EXPECT_EQ(json["f"].asBool(), false);
 
-  EXPECT_TRUE(_2["t"].isBool());
-  EXPECT_EQ(_2["t"].asBool(), true);
+  EXPECT_TRUE(json["t"].isBool());
+  EXPECT_EQ(json["t"].asBool(), true);
 
-  EXPECT_TRUE(_2["i"].isNumber());
-  EXPECT_EQ(_2["i"].asDouble(), 123.0);
+  EXPECT_TRUE(json["i"].isNumber());
+  EXPECT_EQ(json["i"].asDouble(), 123.0);
 
-  EXPECT_TRUE(_2["s"].isString());
-  EXPECT_EQ(_2["s"].asString(), "abc");
+  EXPECT_TRUE(json["s"].isString());
+  EXPECT_EQ(json["s"].asString(), "abc");
 
-  EXPECT_TRUE(_2["a"].isArray());
-  EXPECT_EQ(_2["a"].size(), 3);
+  EXPECT_TRUE(json["a"].isArray());
+  EXPECT_EQ(json["a"].size(), 3);
 
-  EXPECT_TRUE(_2["o"].isObject());
-  EXPECT_EQ(_2["o"].size(), 3);
+  EXPECT_TRUE(json["o"].isObject());
+  EXPECT_EQ(json["o"].size(), 3);
 }
 
 TEST(Error, ExpectValue) {
@@ -299,45 +299,45 @@ TEST(Error, MissCommaOrCurlyBracket) {
 
 TEST(Json, Ctor) {
   {
-    Json _1(nullptr);
-    EXPECT_TRUE(_1.isNull());
+    Json json(nullptr);
+    EXPECT_TRUE(json.isNull());
   }
   {
-    Json _1(true);
-    EXPECT_TRUE(_1.isBool());
-    EXPECT_EQ(_1.asBool(), true);
+    Json json(true);
+    EXPECT_TRUE(json.isBool());
+    EXPECT_EQ(json.asBool(), true);
 
-    Json _2(false);
-    EXPECT_TRUE(_2.isBool());
-    EXPECT_EQ(_2.asBool(), false);
+    Json json1(false);
+    EXPECT_TRUE(json1.isBool());
+    EXPECT_EQ(json1.asBool(), false);
   }
   {
-    Json _1(0);
-    EXPECT_TRUE(_1.isNumber());
-    EXPECT_EQ(_1.asDouble(), 0);
+    Json json(0);
+    EXPECT_TRUE(json.isNumber());
+    EXPECT_EQ(json.asDouble(), 0);
 
-    Json _2(100.1);
-    EXPECT_TRUE(_2.isNumber());
-    EXPECT_EQ(_2.asDouble(), 100.1);
+    Json json1(100.1);
+    EXPECT_TRUE(json1.isNumber());
+    EXPECT_EQ(json1.asDouble(), 100.1);
   }
   {
-    Json _1("hello");
-    EXPECT_TRUE(_1.isString());
-    EXPECT_EQ(_1.asString(), "hello");
+    Json json("hello");
+    EXPECT_TRUE(json.isString());
+    EXPECT_EQ(json.asString(), "hello");
   }
   {
     vector<Json> arr{Json(nullptr), Json(true), Json(1.2)};
-    Json _1(arr);
-    EXPECT_TRUE(_1.isArray());
-    EXPECT_TRUE(_1[0].isNull());
+    Json json(arr);
+    EXPECT_TRUE(json.isArray());
+    EXPECT_TRUE(json[0].isNull());
   }
   {
     unordered_map<string, Json> obj;
     obj.insert({"hello", Json(nullptr)});
     obj.insert({"world", Json("!!")});
-    Json _1(obj);
-    EXPECT_TRUE(_1.isObject());
-    EXPECT_TRUE(_1["world"].isString());
+    Json json(obj);
+    EXPECT_TRUE(json.isObject());
+    EXPECT_TRUE(json["world"].isString());
   }
 }
 
