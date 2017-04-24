@@ -10,39 +10,44 @@ using namespace json;
 using namespace details;
 
 namespace details {
+class JsonException final : public runtime_error {
+ public:
+  explicit JsonException(const string& errMsg) : runtime_error(errMsg) {}
+  const char* what() const noexcept override { return runtime_error::what(); }
+};
+
 class JsonValue {
  public:
   virtual Json::JsonType type() const = 0;
 
-  virtual bool asBool() const { throw runtime_error("not a boolean"); }
-  virtual double asDouble() const { throw runtime_error("not a number"); }
+  virtual bool asBool() const { throw JsonException("not a boolean"); }
+  virtual double asDouble() const { throw JsonException("not a number"); }
   virtual const string& asString() const {
-    throw runtime_error("not a string");
+    throw JsonException("not a string");
   }
-  virtual Json::array_t& asArray() { throw runtime_error("not an array"); }
+  virtual Json::array_t& asArray() { throw JsonException("not an array"); }
   virtual const Json::array_t& asArray() const {
-    throw runtime_error("not an array");
+    throw JsonException("not an array");
   }
-  virtual Json::object_t& asObect() { throw runtime_error("not an object"); }
+  virtual Json::object_t& asObect() { throw JsonException("not an object"); }
   virtual const Json::object_t& asObect() const {
-    throw runtime_error("not an object");
+    throw JsonException("not an object");
   }
-  virtual Json& operator[](size_t) { throw runtime_error("not an array"); }
+  virtual Json& operator[](size_t) { throw JsonException("not an array"); }
   virtual const Json& operator[](size_t) const {
-    throw runtime_error("not an array");
+    throw JsonException("not an array");
   }
   virtual Json& operator[](const string&) {
-    throw runtime_error("not an object");
+    throw JsonException("not an object");
   }
   virtual const Json& operator[](const string&) const {
-    throw runtime_error("not an object");
+    throw JsonException("not an object");
   }
 
   virtual size_t size() const { return 0; }
 
-  virtual ~JsonValue() {}
-
   JsonValue() {}
+  virtual ~JsonValue() {}
 };
 
 class JsonNull final : public JsonValue {
@@ -351,7 +356,7 @@ class Parser final {
   }
 
   [[noreturn]] void error(const string& msg) const {
-    throw runtime_error(msg + ": " + start_);
+    throw JsonException(msg + ": " + start_);
   }
 
   const char* start_;
@@ -402,7 +407,7 @@ void Json::swap(Json& rhs) noexcept {
   swap(value_, rhs.value_);
 }
 
-bool Json::operator==(const Json& rhs) const {
+bool Json::operator==(const Json& rhs) const noexcept {
   if (value_.get() == rhs.value_.get()) return true;
   if (type() != rhs.type()) return false;
 
@@ -422,15 +427,17 @@ bool Json::operator==(const Json& rhs) const {
   }
   assert(0);
 }
-bool Json::operator!=(const Json& rhs) const { return !(*this == rhs); }
+bool Json::operator!=(const Json& rhs) const noexcept {
+  return !(*this == rhs);
+}
 
-Json::JsonType Json::type() const { return value_->type(); }
-bool Json::isNull() const { return type() == JsonType::kNull; }
-bool Json::isBool() const { return type() == JsonType::kBool; }
-bool Json::isNumber() const { return type() == JsonType::kNumber; }
-bool Json::isString() const { return type() == JsonType::kString; }
-bool Json::isArray() const { return type() == JsonType::kArray; }
-bool Json::isObject() const { return type() == JsonType::kObject; }
+Json::JsonType Json::type() const noexcept { return value_->type(); }
+bool Json::isNull() const noexcept { return type() == JsonType::kNull; }
+bool Json::isBool() const noexcept { return type() == JsonType::kBool; }
+bool Json::isNumber() const noexcept { return type() == JsonType::kNumber; }
+bool Json::isString() const noexcept { return type() == JsonType::kString; }
+bool Json::isArray() const noexcept { return type() == JsonType::kArray; }
+bool Json::isObject() const noexcept { return type() == JsonType::kObject; }
 
 bool Json::asBool() const { return value_->asBool(); }
 double Json::asDouble() const { return value_->asDouble(); }
@@ -447,19 +454,19 @@ const Json& Json::operator[](const string& i) const {
   return value_->operator[](i);
 }
 
-size_t Json::size() const { return value_->size(); }
+size_t Json::size() const noexcept { return value_->size(); }
 
-Json Json::parse(const string& content, string& errMsg) {
+Json Json::parse(const string& content, string& errMsg) noexcept {
   try {
     Parser p(content);
     return p.parse();
-  } catch (runtime_error& e) {
+  } catch (JsonException& e) {
     errMsg = e.what();
     return Json(nullptr);
   }
 }
 
-string Json::serialize() const {
+string Json::serialize() const noexcept {
   switch (value_->type()) {
     case Json::JsonType::kNull:
       return "null";
@@ -467,7 +474,7 @@ string Json::serialize() const {
       return value_->asBool() ? "true" : "false";
     case Json::JsonType::kNumber:
       char buf[32];
-      sprintf(buf, "%.17g", value_->asDouble());
+      snprintf(buf, sizeof(buf), "%.17g", value_->asDouble());
       return buf;
     case Json::JsonType::kString:
       return serializeString();
@@ -479,7 +486,7 @@ string Json::serialize() const {
   assert(0);
 }
 
-string Json::serializeString() const {
+string Json::serializeString() const noexcept {
   string ret = "\"";
   for (auto e : value_->asString()) {
     switch (e) {
@@ -516,7 +523,7 @@ string Json::serializeString() const {
   return ret + '"';
 }
 
-string Json::serializeArray() const {
+string Json::serializeArray() const noexcept {
   string ret = "[ ";
   for (size_t i = 0; i < value_->size(); ++i) {
     if (i > 0) ret += ", ";
@@ -525,7 +532,7 @@ string Json::serializeArray() const {
   return ret + " ]";
 }
 
-string Json::serializeObject() const {
+string Json::serializeObject() const noexcept {
   string ret = "{ ";
   bool first = 1;
   for (const pair<string, Json>& p : value_->asObect()) {
@@ -540,5 +547,4 @@ string Json::serializeObject() const {
   }
   return ret + " }";
 }
-
 }  // namespace json

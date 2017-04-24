@@ -60,24 +60,24 @@ class Json final {
   void swap(Json&) noexcept;
 
   /// Compare two JSON values for equality
-  bool operator==(const Json&) const;
+  bool operator==(const Json&) const noexcept;
   /// Compare two JSON values for equality
-  bool operator!=(const Json&) const;
+  bool operator!=(const Json&) const noexcept;
 
   /// Accesses the type of JSON value the current value instance is
-  JsonType type() const;
+  JsonType type() const noexcept;
   /// Is the current value a null value?
-  bool isNull() const;
+  bool isNull() const noexcept;
   /// Is the current value a boolean value?
-  bool isBool() const;
+  bool isBool() const noexcept;
   /// Is the current value a number value?
-  bool isNumber() const;
+  bool isNumber() const noexcept;
   /// Is the current value a string value?
-  bool isString() const;
+  bool isString() const noexcept;
   /// Is the current value a array value?
-  bool isArray() const;
+  bool isArray() const noexcept;
   /// Is the current value a object value?
-  bool isObject() const;
+  bool isObject() const noexcept;
 
   /// Converts the JSON value to a C++ boolean, if and only if it is a boolean
   bool asBool() const;
@@ -93,7 +93,6 @@ class Json final {
   object_t& asObect();
   /// Converts the JSON value to a json object, if and only if it is an object
   const object_t& asObect() const;
-
   /// Accesses a field of a JSON array
   Json& operator[](std::size_t);
   /// Accesses a field of a JSON array
@@ -102,20 +101,21 @@ class Json final {
   Json& operator[](const std::string&);
   /// Accesses a field of a JSON object
   const Json& operator[](const std::string&) const;
-  /// Get the number of children of the value, 0 for all non-composites
-  std::size_t size() const;
 
-  /// Serializes the Json value to C++ string
-  std::string serialize() const;
+  /// Get the number of children of the value, 0 for all non-composites
+  std::size_t size() const noexcept;
+
   /// Parse the C++ string to a JSON value
   /// if error occurs, errMsg storage the error message
-  static Json parse(const std::string& content, std::string& errMsg);
+  static Json parse(const std::string& content, std::string& errMsg) noexcept;
+  /// Serializes the Json value to C++ string
+  std::string serialize() const noexcept;
 
  private:
   /// Only used internally by serialize()
-  std::string serializeString() const;
-  std::string serializeArray() const;
-  std::string serializeObject() const;
+  std::string serializeString() const noexcept;
+  std::string serializeArray() const noexcept;
+  std::string serializeObject() const noexcept;
 
   std::unique_ptr<details::JsonValue> value_;
 };
