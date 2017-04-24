@@ -38,16 +38,17 @@ class Json final {
   explicit Json(bool);
   /// Constructor creating a JSON number value
   explicit Json(int);
-  /// Constructor creating a JSON number value
   explicit Json(double);
   /// Constructor creating a JSON string value
-  explicit Json(const std::string&);
-  /// Constructor creating a JSON string value
   explicit Json(const char*);
+  explicit Json(const std::string&);
+  explicit Json(std::string&&);
   /// Constructor creating a JSON array value
   explicit Json(const array_t&);
+  explicit Json(array_t&&);
   /// Constructor creating a JSON object value
   explicit Json(const object_t&);
+  explicit Json(object_t&&);
   /// Copy Constructor
   Json(const Json&);
   /// Move Constructor

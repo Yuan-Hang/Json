@@ -18,10 +18,10 @@ class JsonException final : public runtime_error {
 
 class JsonValue {
  public:
-  JsonValue() {}
+  JsonValue() = default;
   JsonValue(const JsonValue&) = delete;
   JsonValue(JsonValue&&) = delete;
-  virtual ~JsonValue() {}
+  virtual ~JsonValue() = default;
 
   virtual Json::JsonType type() const = 0;
 
@@ -82,12 +82,14 @@ class JsonNumber final : public Value<double, Json::JsonType::kNumber> {
 class JsonString final : public Value<string, Json::JsonType::kString> {
  public:
   explicit JsonString(const string& val) : Value(val) {}
+  explicit JsonString(string&& val) : Value(std::move(val)) {}
   const string& asString() const override { return val_; }
 };
 
 class JsonArray final : public Value<Json::array_t, Json::JsonType::kArray> {
  public:
   explicit JsonArray(const Json::array_t& val) : Value(val) {}
+  explicit JsonArray(Json::array_t&& val) : Value(std::move(val)) {}
   Json::array_t& asArray() override { return val_; }
   const Json::array_t& asArray() const override { return val_; }
   const Json& operator[](size_t i) const override { return val_[i]; }
@@ -98,6 +100,7 @@ class JsonArray final : public Value<Json::array_t, Json::JsonType::kArray> {
 class JsonObject final : public Value<Json::object_t, Json::JsonType::kObject> {
  public:
   explicit JsonObject(const Json::object_t& val) : Value(val) {}
+  explicit JsonObject(Json::object_t&& val) : Value(std::move(val)) {}
   Json::object_t& asObect() override { return val_; }
   const Json::object_t& asObect() const override { return val_; }
   const Json& operator[](const string& i) const override { return val_.at(i); }
@@ -360,10 +363,13 @@ Json::Json(nullptr_t) : value_(make_unique<JsonNull>(nullptr)) {}
 Json::Json(bool val) : value_(make_unique<JsonBool>(val)) {}
 Json::Json(int val) : Json(val * 1.0) {}
 Json::Json(double val) : value_(make_unique<JsonNumber>(val)) {}
-Json::Json(const string& val) : value_(make_unique<JsonString>(val)) {}
 Json::Json(const char* val) : value_(make_unique<JsonString>(val)) {}
+Json::Json(const string& val) : value_(make_unique<JsonString>(val)) {}
+Json::Json(string&& val) : value_(make_unique<JsonString>(std::move(val))) {}
 Json::Json(const array_t& val) : value_(make_unique<JsonArray>(val)) {}
+Json::Json(array_t&& val) : value_(make_unique<JsonArray>(std::move(val))) {}
 Json::Json(const object_t& val) : value_(make_unique<JsonObject>(val)) {}
+Json::Json(object_t&& val) : value_(make_unique<JsonObject>(std::move(val))) {}
 Json::Json(const Json& rhs) {
   switch (rhs.type()) {
     case JsonType::kNull:
@@ -386,7 +392,9 @@ Json::Json(const Json& rhs) {
       break;
   }
 }
-Json::Json(Json&& rhs) noexcept : value_(std::move(rhs.value_)) {}
+Json::Json(Json&& rhs) noexcept : value_(std::move(rhs.value_)) {
+  rhs.value_ = nullptr;
+}
 Json::~Json() {}
 
 Json& Json::operator=(Json rhs) {
