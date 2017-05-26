@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 2.6)
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++1z -Wall")
 
-add_library(json ../json.cc)
-add_library(parse ../parse.cc)
+add_library(json ../src/json.cc)
+add_library(parse ../src/parse.cc)
 
 enable_testing()
 add_executable(Test test.cc)
