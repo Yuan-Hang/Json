@@ -7,12 +7,8 @@
 using namespace std;
 
 namespace json {
-constexpr bool is1to9(char ch) {
-  return ch >= '1' && ch <= '9';
-}
-constexpr bool is0to9(char ch) {
-  return ch >= '0' && ch <= '9';
-}
+constexpr bool is1to9(char ch) { return ch >= '1' && ch <= '9'; }
+constexpr bool is0to9(char ch) { return ch >= '0' && ch <= '9'; }
 
 Json Parser::parse() {
   parseWhitespace();
@@ -83,8 +79,7 @@ string Parser::parseRawString() {
     case '\"': start_ = ++curr_; return str;
     case '\0': error("MISS QUOTATION MARK");
     default:
-      if (static_cast<unsigned char>(*curr_) < 0x20)
-        error("INVALID STRING CHAR");
+      if (static_cast<unsigned char>(*curr_) < 0x20) error("INVALID STRING CHAR");
       str.push_back(*curr_);
       break;
     case '\\':
@@ -203,8 +198,7 @@ Json Parser::parseObject() {
 }
 
 void Parser::parseWhitespace() noexcept {
-  while (*curr_ == ' ' || *curr_ == '\t' || *curr_ == '\r' || *curr_ == '\n')
-    ++curr_;
+  while (*curr_ == ' ' || *curr_ == '\t' || *curr_ == '\r' || *curr_ == '\n') ++curr_;
   start_ = curr_;
 }
 }  // namespace json

@@ -17,22 +17,14 @@ Json::Json(const Json& rhs) {
   switch (rhs.type()) {
   case JsonType::kNull: value_ = make_unique<JsonNull>(nullptr); break;
   case JsonType::kBool: value_ = make_unique<JsonBool>(rhs.toBool()); break;
-  case JsonType::kNumber:
-    value_ = make_unique<JsonDouble>(rhs.toDouble());
-    break;
-  case JsonType::kString:
-    value_ = make_unique<JsonString>(rhs.toString());
-    break;
+  case JsonType::kNumber: value_ = make_unique<JsonDouble>(rhs.toDouble()); break;
+  case JsonType::kString: value_ = make_unique<JsonString>(rhs.toString()); break;
   case JsonType::kArray: value_ = make_unique<JsonArray>(rhs.toArray()); break;
-  case JsonType::kObject:
-    value_ = make_unique<JsonObject>(rhs.toObject());
-    break;
+  case JsonType::kObject: value_ = make_unique<JsonObject>(rhs.toObject()); break;
   }
 }
 
-Json::Json(Json&& rhs) noexcept : value_(std::move(rhs.value_)) {
-  rhs.value_ = nullptr;
-}
+Json::Json(Json&& rhs) noexcept : value_(std::move(rhs.value_)) { rhs.value_ = nullptr; }
 
 Json::~Json() {}
 
@@ -46,60 +38,26 @@ void Json::swap(Json& rhs) noexcept {
   swap(value_, rhs.value_);
 }
 
-JsonType Json::type() const noexcept {
-  return value_->type();
-}
-bool Json::isNull() const noexcept {
-  return type() == JsonType::kNull;
-}
-bool Json::isBool() const noexcept {
-  return type() == JsonType::kBool;
-}
-bool Json::isNumber() const noexcept {
-  return type() == JsonType::kNumber;
-}
-bool Json::isString() const noexcept {
-  return type() == JsonType::kString;
-}
-bool Json::isArray() const noexcept {
-  return type() == JsonType::kArray;
-}
-bool Json::isObject() const noexcept {
-  return type() == JsonType::kObject;
-}
+JsonType Json::type() const noexcept { return value_->type(); }
+bool Json::isNull() const noexcept { return type() == JsonType::kNull; }
+bool Json::isBool() const noexcept { return type() == JsonType::kBool; }
+bool Json::isNumber() const noexcept { return type() == JsonType::kNumber; }
+bool Json::isString() const noexcept { return type() == JsonType::kString; }
+bool Json::isArray() const noexcept { return type() == JsonType::kArray; }
+bool Json::isObject() const noexcept { return type() == JsonType::kObject; }
 
-bool Json::toBool() const {
-  return value_->toBool();
-}
-double Json::toDouble() const {
-  return value_->toDouble();
-}
-const string& Json::toString() const {
-  return value_->toString();
-}
-const Json::array_t& Json::toArray() const {
-  return value_->toArray();
-}
-const Json::object_t& Json::toObject() const {
-  return value_->toObject();
-}
+bool Json::toBool() const { return value_->toBool(); }
+double Json::toDouble() const { return value_->toDouble(); }
+const string& Json::toString() const { return value_->toString(); }
+const Json::array_t& Json::toArray() const { return value_->toArray(); }
+const Json::object_t& Json::toObject() const { return value_->toObject(); }
 
-Json& Json::operator[](size_t i) {
-  return value_->operator[](i);
-}
-const Json& Json::operator[](size_t i) const {
-  return value_->operator[](i);
-}
-Json& Json::operator[](const string& i) {
-  return value_->operator[](i);
-}
-const Json& Json::operator[](const string& i) const {
-  return value_->operator[](i);
-}
+Json& Json::operator[](size_t i) { return value_->operator[](i); }
+const Json& Json::operator[](size_t i) const { return value_->operator[](i); }
+Json& Json::operator[](const string& i) { return value_->operator[](i); }
+const Json& Json::operator[](const string& i) const { return value_->operator[](i); }
 
-size_t Json::size() const noexcept {
-  return value_->size();
-}
+size_t Json::size() const noexcept { return value_->size(); }
 
 Json Json::parse(const string& content, string& errMsg) noexcept {
   try {

@@ -1,4 +1,4 @@
-#include "../json.h"
+#include "json.h"
 #include <dirent.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -62,14 +62,9 @@ int main() {
   while ((dirp = readdir(dp)) != nullptr) {
     string filename = "../Data/";
     switch (dirp->d_name[0]) {
-      case 'f':
-        failJson(filename + dirp->d_name);
-        break;
-      case 'p':
-        passJson(filename + dirp->d_name);
-        break;
-      default:
-        break;
+    case 'f': failJson(filename + dirp->d_name); break;
+    case 'p': passJson(filename + dirp->d_name); break;
+    default: break;
     }
   }
   closedir(dp);
